@@ -1,0 +1,7 @@
+runner/sourceImage/testcases
+**/.*
+**/node_modules
+**/package-lock.json
+
+!**/.gitignore
+!**/.*-example

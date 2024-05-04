@@ -6,7 +6,7 @@ const fs = require('fs');
 class Image {
     static counter = 0;
 
-    constructor (code, timeout = 250) {
+    constructor (code, timeout = 45) {
         this.id = ++Image.counter;
 
         this.code = code;
@@ -18,7 +18,7 @@ class Image {
 
     async init() {
         fs.cpSync('sourceImage', this.folderName, { recursive: true });
-        fs.writeFileSync(`${this.folderName}/main.py`, this.code);
+        fs.writeFileSync(`${this.folderName}/userCode.py`, this.code);
 
         const runnerName = `runner-${this.id}`;
 
@@ -43,8 +43,9 @@ class Image {
 class Container {
     constructor (image) {
         this.image = image;
-        this.memoryCap = '256m';
-        this.cpuShares = 256;
+        // this.memoryCap = '512m';
+        this.memoryCap = '750m';
+        this.cpuShares = 64;
         this.network = 'none';
 
         this.containerId;
@@ -117,7 +118,7 @@ class Container {
 
     async init () {
         this.status = "Creating container";
-        const { stdout, stderr } = await exec(`docker run --memory=${this.memoryCap} --cpu-shares=${this.cpuShares} --network=${this.network} --detach ${this.image.imageName}`);
+        const { stdout, stderr } = await exec(`docker run --cpu-shares=${this.cpuShares} --memory=${this.memoryCap} --network=${this.network} --read-only --detach ${this.image.imageName}`);
 
         this.startTime = Date.now()
 
@@ -145,18 +146,25 @@ const runTask = async (code) => {
     await container.init();
     await container.wait();
     await container.calculateUpTime();
-    // await container.getLogs();
+    await container.getLogs();
 
     await container.remove();
     await image.remove();
 
     const { exitCode, upTimeSeconds } = container;
 
+    console.log({
+        timeout: image.timeout,
+        exitCode,
+        upTimeSeconds,
+        logs: container.logs,
+    })
+    
     return {
         timeout: image.timeout,
         exitCode,
         upTimeSeconds,
-        logs,
+        logs: container.logs,
     };
 }
 
@@ -164,18 +172,92 @@ const main = async () => {
     console.log('starting testing')
     const inputs = [
         `
-import time
-import sys
+import math
 
+def findMaxLine(coords, n): # O(n^2)
+    if not n: return 0
+    lineMap = {}
+    maxPointCount = 0
 
-counter = 1
-while (counter < 5):
-    print('Counter', counter)
-    counter += 1
-    time.sleep(1)
+    for a in range(n):
+        for b in range(a + 1, n):
+            A = coords[a]
+            B = coords[b]
+           
+            rise = B[1] - A[1]
+            run = B[0] - A[0]
+            if not run:
+                # if we have a vertical line we'll describe it by its infinite slope and x intercept
+                m = float('inf')
+                y = A[0]
+            else: 
+                m = rise / run
+                y = (A[1] - m * A[0])
+            
+            lineMap[(m, y)] = lineMap.get((m, y), 0) + 2
 
+            maxPointCount = max(maxPointCount, lineMap[(m, y)])
+
+    return math.floor((1 + math.sqrt(4 * maxPointCount + 1)) / 2)
+        `,
+        `
+def findMaxLine(coords, n): # O(n^2)
+    lineMap = {}
+    maxPointCount = 0
+
+    for a in range(n):
+        for b in range(n):
+            A = coords[a]
+            B = coords[b]
+           
+            rise = B[1] - A[1]
+            run = B[0] - A[0]
+            if not run:
+                # if we have a vertical line we'll describe it by its infinite slope and x intercept
+                m = float('inf')
+                y = A[0]
+            else: 
+                m = rise / run
+                y = (A[1] - m * A[0])
+
+            if (m, y) not in lineMap:
+                lineMap[(m, y)] = set()
+
+            lineMap[(m, y)].add(A)
+            lineMap[(m, y)].add(B)
+
+            maxPointCount = max(maxPointCount, len(lineMap[(m, y)]))
+
+    return maxPointCount
+        `,
+        `
+def findMaxLine(coords, n):
     
-print('leaving')
+    # create a map to hold the number of points on each line
+    # the key is (slope, y_intercept)
+    line_maps = {}
+    for i in range(n):
+        x1 = coords[i][0]
+        y1 = coords[i][1]
+        for j in range(i + 1, n):
+            x2 = coords[i][0]
+            y2 = coords[i][1]
+            m = (y2 - y1)/(x2 - x1)
+            b = y2 - m*x1
+            
+            line_key = (m, b)
+            
+            if (m, b) in line_maps:
+                line_maps[(m, b)] += 1
+            else:
+                line_maps[(m, b)] = 2
+    max_count = 1
+    
+    for a in line_maps:
+        if line_maps[a] > max_count:
+            max_count = line_maps[a]
+    
+    return max_count
         `
     ];
 

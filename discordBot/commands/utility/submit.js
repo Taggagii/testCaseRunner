@@ -21,7 +21,7 @@ module.exports = {
         const week = interaction.fields.getTextInputValue('week');
 
         (async () => {
-            const res = await runTask(code, week, 45);
+            const res = await runTask(code, week, 36 * 5);
 
             console.log(res);
 

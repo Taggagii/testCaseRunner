@@ -39,7 +39,7 @@ Your code took ${res.upTimeSeconds} seconds to run!
                     124: 'because it timed out :hourglass:',
                     1: 'because it failed a test case :x:',
                     2: 'because it threw an error',
-                    '-1': 'because it ran out of memory :brain:',
+                    '-1': 'because it was killed (what did you do?)',
                 }
 
                 let reasoning = 'for some reason I dunno man :face_with_diagonal_mouth:';

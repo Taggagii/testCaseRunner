@@ -1,7 +1,8 @@
-runner/sourceImage/testcases
 **/.*
 **/node_modules
 **/package-lock.json
+**/testers/**/*
 
+!**/testers/README.md
 !**/.gitignore
 !**/.*-example

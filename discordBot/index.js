@@ -3,12 +3,30 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const { Client, Collection, Events, GatewayIntentBits, Partials } = require('discord.js');
+const submit = require('./commands/utility/submit');
+const { time } = require('console');
+const { createRequire } = require('module');
 const client = new Client({
     intents: Object.values(GatewayIntentBits),
     partials: Object.values(Partials)
 });
 
 client.commands = new Collection();
+
+const submitTimes = {};
+const msPerMinute = 60 * 1000;
+const requiredSubmissionWaitTime = 5 * msPerMinute;
+
+const timeSinceLastSubmit = (userId) => {
+    const curTime = Date.now();
+    if (Object.prototype.hasOwnProperty.call(submitTimes, userId)) {
+        const lastSubmitTime = submitTimes[userId];
+
+        return curTime - lastSubmitTime;
+    }
+
+    return Infinity;
+}
 
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
@@ -35,6 +53,41 @@ client.once(Events.ClientReady, (readyClient) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+    if (!interaction.isModalSubmit()) {
+        return;
+    }
+   
+    const command = interaction.client.commands.get(interaction.customId);
+
+    if (!command) {
+        console.error(`No command matching ${interaction.commandName} was found`);
+        return;
+    }
+
+    try {
+        await command.handleModal(interaction);
+    } catch (error) {
+        console.error(error);
+
+        const responsePayload = {
+            content: 'There was an error while handling this modal',
+            ephemeral: true,
+        };
+        
+        try {
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp(responsePayload);
+            } else {
+                await interaction.reply(responsePayload)
+            }
+        } catch (error) {
+            // console.log('Error while handling error', error);
+            console.log(interaction);
+        }
+    }
+});
+
+client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isChatInputCommand()) {
         return;
     }
@@ -45,6 +98,26 @@ client.on(Events.InteractionCreate, async (interaction) => {
         console.error(`No command matching ${interaction.commandName} was found`);
         return;
     }
+
+    if (interaction.commandName === 'submit') {
+        const elapsedTime = timeSinceLastSubmit(interaction.user.id);
+        if (elapsedTime < requiredSubmissionWaitTime) {
+            const remainingTimeMs = requiredSubmissionWaitTime - elapsedTime;
+            const remainingTimeMin = Math.floor(remainingTimeMs / msPerMinute);
+            const remainingTimeSeconds = Math.floor((remainingTimeMs % msPerMinute) / 1000);
+
+            const minutesString = (remainingTimeMin) ? `${remainingTimeMin} minutes and` : '';
+
+            await interaction.reply({
+                content: `You can resubmit in ${minutesString} ${remainingTimeSeconds} seconds :clock:`,
+                ephemeral: true,
+            });
+            return;
+        }
+
+        submitTimes[interaction.user.id] = Date.now();
+    }
+
 
     try {
         await command.execute(interaction);

@@ -1,6 +1,6 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 
-
+const { runTask, Image, Container } = require('../../../runner')
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,21 +14,82 @@ module.exports = {
                     Math.floor((Date.now() - (new Date('2024/04/04'))) / (7 * 24 * 60 * 60 * 1000))
                 )
                 .setRequired(true)
-        )
-        .addStringOption((option) =>
-            option.setName('code')
-                .setDescription('The code you are submitting for this problem')
-                .setRequired(true)
         ),
 
-    async execute(interaction) {
-        console.log(interaction.options)
+    async handleModal(interaction) {
+        const code = interaction.fields.getTextInputValue('code');
+        const week = interaction.fields.getTextInputValue('week');
 
-        
+        (async () => {
+            const res = await runTask(code, week, 45);
+
+            console.log(res);
+
+            if (res.exitCode === 0) {
+                // await interaction.channel.send(`
+                await interaction.user.send(`
+Your code: \`\`\`py
+${code}
+\`\`\`
+for week ${week} PASSED the test cases! :tada:
+Your code took ${res.upTimeSeconds} seconds to run!
+`);
+            } else {
+                const reasoningMap = {
+                    124: 'because it timed out :hourglass:',
+                    1: 'because it failed a test case :x:',
+                    2: 'because it threw an error',
+                    '-1': 'because it ran out of memory :brain:',
+                }
+
+                let reasoning = 'for some reason I dunno man :face_with_diagonal_mouth:';
+
+                if (Object.prototype.hasOwnProperty.call(reasoningMap, res.exitCode)) {
+                    reasoning = reasoningMap[res.exitCode];
+                }
+
+
+                await interaction.user.send(`
+Your code \`\`\`py
+${code}
+\`\`\`
+for week ${week} FAILED.
+It failed ${reasoning}
+                `)
+            }
+
+        })();
 
         await interaction.reply({
-            content: 'WOWOOWOWOWOW!',
+            content: `Running your code for week ${week}. Please wait :blush:`,
             ephemeral: true,
         });
+
+    },
+
+    async execute(interaction) {
+        const week = interaction.options.get('week').value;
+
+        const modal = new ModalBuilder()
+            .setCustomId('submit')
+            .setTitle(`Submit Code`);
+
+        const weekInput = new TextInputBuilder()
+            .setCustomId('week')
+            .setLabel('Week')
+            .setValue(week.toString())
+            .setStyle(TextInputStyle.Short);
+
+        const codeInput = new TextInputBuilder()
+            .setCustomId('code')
+            .setLabel('The code you are submitting for this problem')
+            .setStyle(TextInputStyle.Paragraph);
+
+        const firstActionRow = new ActionRowBuilder().addComponents(weekInput);
+        const secondActionRow = new ActionRowBuilder().addComponents(codeInput);
+
+        modal.addComponents(firstActionRow, secondActionRow);
+
+        await interaction.showModal(modal);
     },
 };

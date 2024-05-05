@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 
-const { runTask, Image, Container } = require('../../../runner')
+const { runTask } = require('../../../runner')
 
 module.exports = {
     data: new SlashCommandBuilder()

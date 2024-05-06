@@ -5,13 +5,17 @@
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start-bot": "node index.js"
+    "start-bot": "node index.js",
+    "start-database": "dotenv -- cross-var docker run --name database -v ./datadir:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=%MYSQL_PASSWORD% -p 3306:3306 -d mysql:latest",
+    "start-all": "npm run start-database ; npm run start-bot"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cross-var": "^1.1.0",
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.5",
+    "dotenv-cli": "^7.4.1",
     "mysql2": "^3.9.7"
   }
 }

@@ -3,7 +3,9 @@
 **/package-lock.json
 **/testers
 startup.sh
+**/datadir
 
 !**/testers/README.md
 !**/.gitignore
 !**/.*-example
+

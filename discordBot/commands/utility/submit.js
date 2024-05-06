@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
-
 const { runTask } = require('../../../runner')
+const { weeksTable } = require('../../databaseHandler');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,11 +21,22 @@ module.exports = {
         const week = interaction.fields.getTextInputValue('week');
 
         (async () => {
+            console.log('USER SUBMITTED CODE: ', interaction.user.globalName);
             const res = await runTask(code, week, 36 * 5);
 
-            console.log(res);
-
             if (res.exitCode === 0) {
+                const oldRecord = await weeksTable.getRecord(interaction.user.id, week);
+
+                if (!oldRecord?.finished || res.upTimeSeconds < oldRecord.executionTime) {
+                    await weeksTable.updateRecord(
+                        interaction.user.id,
+                        week,
+                        res.upTimeSeconds,
+                        1,
+                        code
+                    );
+                }
+
                 // await interaction.channel.send(`
                 await interaction.user.send(`
 Your code: \`\`\`py
@@ -67,7 +78,7 @@ It failed ${reasoning}
 
     },
 
-    async execute(interaction) {
+    async execute(interaction) {        
         const week = interaction.options.get('week').value;
 
         const modal = new ModalBuilder()

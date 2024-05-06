@@ -143,9 +143,11 @@ class Container {
 }
 
 const runTask = async (code, week, timeout) => {
+    console.log('Making Image')
     const image = new Image(code, week, timeout);
     await image.init();
 
+    console.log('Making Container')
     const container = new Container(image);
     await container.init();
     await container.wait();
@@ -154,15 +156,20 @@ const runTask = async (code, week, timeout) => {
 
     await container.remove();
     await image.remove();
+    console.log('Cleaning up')
 
     const { exitCode, upTimeSeconds, logs } = container;
 
-    return {
+    const response = {
         timeout,
         exitCode,
         upTimeSeconds,
         logs,
     };
+
+    console.log(response)
+
+    return response;
 }
 
 module.exports = {

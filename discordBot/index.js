@@ -3,17 +3,15 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const { Client, Collection, Events, GatewayIntentBits, Partials } = require('discord.js');
-const submit = require('./commands/utility/submit');
-const { time } = require('console');
-const { createRequire } = require('module');
 const client = new Client({
     intents: Object.values(GatewayIntentBits),
     partials: Object.values(Partials)
 });
-
 client.commands = new Collection();
 
-const submitTimes = {};
+const { weeksTable } = require('./databaseHandler');
+const { submitTimes } = require('./submitTimes');
+
 const msPerMinute = 60 * 1000;
 const requiredSubmissionWaitTime = 5 * msPerMinute;
 
@@ -48,7 +46,8 @@ commandFolders.forEach((folder) => {
     });
 });
 
-client.once(Events.ClientReady, (readyClient) => {
+client.once(Events.ClientReady, async (readyClient) => {
+    await weeksTable.init();
     console.log(`Logged in as ${readyClient.user.tag}!`);
 });
 
@@ -56,13 +55,25 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isModalSubmit()) {
         return;
     }
-   
+  
+    if (interaction.customId !== 'submit') {
+        return;
+    }
+
+    if (timeSinceLastSubmit(interaction.user.id) < requiredSubmissionWaitTime) {
+        await interaction.user.send("What are you trying to pull? :rage:");
+        return;
+    }
+
+    submitTimes[interaction.user.id] = Date.now();
+
     const command = interaction.client.commands.get(interaction.customId);
 
     if (!command) {
         console.error(`No command matching ${interaction.commandName} was found`);
         return;
     }
+
 
     try {
         await command.handleModal(interaction);
@@ -114,10 +125,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             });
             return;
         }
-
-        submitTimes[interaction.user.id] = Date.now();
     }
-
 
     try {
         await command.execute(interaction);

@@ -10,21 +10,7 @@ const client = new Client({
 client.commands = new Collection();
 
 const { weeksTable } = require('./databaseHandler');
-const { submitTimes } = require('./submitTimes');
-
-const msPerMinute = 60 * 1000;
-const requiredSubmissionWaitTime = 5 * msPerMinute;
-
-const timeSinceLastSubmit = (userId) => {
-    const curTime = Date.now();
-    if (Object.prototype.hasOwnProperty.call(submitTimes, userId)) {
-        const lastSubmitTime = submitTimes[userId];
-
-        return curTime - lastSubmitTime;
-    }
-
-    return Infinity;
-}
+const { submitTimes, timeUntilClear, canUserSubmit } = require('./submitTimes');
 
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
@@ -60,12 +46,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return;
     }
 
-    if (timeSinceLastSubmit(interaction.user.id) < requiredSubmissionWaitTime) {
+    if (!canUserSubmit(interaction.user.id)) {
         await interaction.user.send("What are you trying to pull? :rage:");
         return;
     }
-
-    submitTimes[interaction.user.id] = Date.now();
 
     const command = interaction.client.commands.get(interaction.customId);
 
@@ -111,16 +95,25 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     if (interaction.commandName === 'submit') {
-        const elapsedTime = timeSinceLastSubmit(interaction.user.id);
-        if (elapsedTime < requiredSubmissionWaitTime) {
-            const remainingTimeMs = requiredSubmissionWaitTime - elapsedTime;
+        if (!canUserSubmit(interaction.user.id)) {
+            if (submitTimes[interaction.user.id].currentlyRunningCode) {
+                await interaction.reply({
+                    content: 'You can only run one piece of code at once :smile:',
+                    ephemeral: true,
+                });
+                return;
+            }
+
+            const msPerMinute = 60 * 1000;
+
+            const remainingTimeMs = timeUntilClear(interaction.user.id);
             const remainingTimeMin = Math.floor(remainingTimeMs / msPerMinute);
             const remainingTimeSeconds = Math.floor((remainingTimeMs % msPerMinute) / 1000);
 
             const minutesString = (remainingTimeMin) ? `${remainingTimeMin} minutes and` : '';
 
             await interaction.reply({
-                content: `You can resubmit in ${minutesString} ${remainingTimeSeconds} seconds :clock:`,
+                content: `You've used up your execution time for now. You can resubmit in ${minutesString} ${remainingTimeSeconds} seconds :clock:`,
                 ephemeral: true,
             });
             return;

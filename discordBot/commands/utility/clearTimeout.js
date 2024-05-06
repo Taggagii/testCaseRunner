@@ -26,7 +26,7 @@ module.exports = {
         }
 
 
-        submitTimes[user.id] = 0;
+        submitTimes[user.id] = undefined;
 
         await interaction.reply({
             content: `Timeout cleared for <@${user.id}>`,

@@ -21,10 +21,11 @@ module.exports = {
         const week = interaction.fields.getTextInputValue('week');
 
         (async () => {
+            const res = await runTask(code, week, 60 * 5);
+            console.log('STUFF OUTPUT');
             console.log('USER SUBMITTED CODE: ', interaction.user.globalName);
             console.log('WEEK:', week);
             console.log(`CODE:\n${code}`);
-            const res = await runTask(code, week, 36 * 5);
 
             if (res.exitCode === 0) {
                 const oldRecord = await weeksTable.getRecord(interaction.user.id, week);

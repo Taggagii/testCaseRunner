@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start-bot": "node index.js",
     "start-database": "dotenv -- cross-var docker run --name database -v ./datadir:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=%MYSQL_PASSWORD% -p 3306:3306 -d mysql:latest",
-    "start-all": "npm run start-database ; npm run start-bot"
+    "start-all": "npm run start-database ; npm run start-bot > \"logs/output-$(date +\"%Y_%m_%d_%I_%M_%p\").log\" 2> \"logs/errors-$(date +\"%Y_%m_%d_%I_%M_%p\").log\""
   },
   "author": "",
   "license": "ISC",

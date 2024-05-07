@@ -72,8 +72,8 @@ Your code took ${res.upTimeSeconds} seconds to run!
 Your code for week ${week} FAILED.
 It failed ${reasoning}
 You have ${remainingTime(interaction.user.id)}ms of execution time remaining until your next refresh.
-(this is temporary for you jacob ${JSON.stringify(res.logs)})
                     `)
+// (this is temporary for you jacob ${JSON.stringify(res.logs)})
                 }
             } catch (error) {
                 console.error('Hit an error while running code', error);

@@ -18,7 +18,7 @@ class WeeksTable {
             CREATE TABLE IF NOT EXISTS weeks (
                 userId varchar(36) NOT NULL,
                 weekNumber int unsigned NOT NULL,
-                executionTime int unsigned NOT NULL,
+                executionTime float unsigned NOT NULL,
                 finished tinyint NOT NULL DEFAULT '0',
                 code mediumtext NOT NULL,
                 PRIMARY KEY (userId,weekNumber)

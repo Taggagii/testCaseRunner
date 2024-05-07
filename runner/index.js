@@ -167,7 +167,7 @@ const runTask = async (code, week, timeout) => {
         logs,
     };
 
-    console.log(response)
+    // console.log(response)
 
     return response;
 }

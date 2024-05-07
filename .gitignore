@@ -9,3 +9,4 @@ startup.sh
 !**/.gitignore
 !**/.*-example
 
+/discordBot/logs

@@ -11,9 +11,6 @@ module.exports = {
             option.setName('week')
                 .setDescription('Which week are you answering for?')
                 .setMinValue(1)
-                .setMaxValue(
-                    Math.floor((Date.now() - (new Date('2024/04/04'))) / (7 * 24 * 60 * 60 * 1000))
-                )
                 .setRequired(true)
         ),
 

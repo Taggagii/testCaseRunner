@@ -45,7 +45,7 @@ module.exports = {
     // ${code}
     // \`\`\`
                     await interaction.user.send(`
-Your code for ${week} PASSED the test cases! :tada:
+Your code for week ${week} PASSED the test cases! :tada:
 Your code took ${res.upTimeSeconds} seconds to run!
     `);
                 } else {
